@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""A more advanced Mapper, using Python iterators and generators."""
+"""A Python Mapper, using Python iterators and generators."""
 
 import sys
 from scipy.spatial.distance import euclidean
