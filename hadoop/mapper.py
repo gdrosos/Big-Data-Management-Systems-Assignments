@@ -2,8 +2,7 @@
 """A Python Mapper, using Python iterators and generators."""
 
 import sys
-from scipy.spatial.distance import euclidean
-
+import math
 
 CENTER1=(746.85881, 937.08133)
 CENTER2=(738.38908, 61.71138)
@@ -12,18 +11,14 @@ CENTER_DICT = {CENTER1:1, CENTER2:2, CENTER3:3}
 
 def read_input(file):
     for line in file:
-        # split the line into words
-        yield line.split()
+        yield line.replace("\n", "").split(" ")
+
+def euclidean(p1, p2):
+    return math.sqrt(abs(p1[0] - p2[0])**2 + abs(p1[1] - p2[1])**2)
 
 def main(separator='\t'):
-    # input comes from STDIN (standard input)
     data = read_input(sys.stdin)
     for words in data:
-        # write the results to STDOUT (standard output);
-        # what we output here will be the input for the
-        # Reduce step, i.e. the input for reducer.py
-        #
-        # tab-delimited; the trivial word count is 1
         point = tuple([float(i) for i in words])
         center_mapper = {}
         center_mapper[CENTER1] = euclidean(point, CENTER1)
@@ -31,9 +26,8 @@ def main(separator='\t'):
         center_mapper[CENTER3] = euclidean(point, CENTER3)
         center = min(center_mapper, key=center_mapper.get)
         output_point = ','.join(str(v) for v in list(point))
-        #output_center = ','.join(str(v) for v in list(center))
-        #print '%s%s%s' % (output_point, separator, output_center)
-        print '%s%s%s' % (output_point, separator, CENTER_DICT.get(center))
+        print(f"{output_point}{separator}{CENTER_DICT.get(center)}")
+
 
 if __name__ == "__main__":
     main()
