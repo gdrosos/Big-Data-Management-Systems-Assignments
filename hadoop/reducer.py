@@ -33,7 +33,7 @@ def main(separator='\t'):
     
     for i in POINT_DICT:
         for k in POINT_DICT[i]:
-            print '%s%s%s' % (k, separator, NEW_CENTERS[i])
+            print(f"{k}{separator}{NEW_CENTERS[i]}")
 
 if __name__ == "__main__":
     main()
