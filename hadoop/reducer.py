@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 """A more advanced Reducer, using Python iterators and generators."""
 
-from itertools import groupby
-from operator import itemgetter
 import sys
 
-POINT_DICT= {
+point_dict= {
         1:[],
         2:[],
         3:[]
     }
 
-NEW_CENTERS={}
+new_centers={}
 
 def read_mapper_output(file, separator='\t'):
     for line in file:
@@ -23,17 +21,16 @@ def main(separator='\t'):
 
     for point, group in data:
         x, y = point.split(",")
-        POINT_DICT[int(group)].append((float(x),float(y)))
+        point_dict[int(group)].append((float(x),float(y)))
     
-    for i in POINT_DICT:
-        x = [p[0] for p in POINT_DICT[i]]
-        y = [p[1] for p in POINT_DICT[i]]
-        centroid = (sum(x) / len(POINT_DICT[i]), sum(y) / len(POINT_DICT[i]))
-        NEW_CENTERS[i]= centroid
+    for i in point_dict:
+        x = [p[0] for p in point_dict[i]]
+        y = [p[1] for p in point_dict[i]]
+        centroid = (sum(x) / len(point_dict[i]), sum(y) / len(point_dict[i]))
+        new_centers[i]= centroid
     
-    for i in POINT_DICT:
-        for k in POINT_DICT[i]:
-            print(f"{k}{separator}{NEW_CENTERS[i]}")
+    for i in point_dict:
+            print(f"{i}{separator}{new_centers[i]}")
 
 if __name__ == "__main__":
     main()
