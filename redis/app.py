@@ -1,7 +1,7 @@
 import sqlite3
 from flask import Flask, render_template
 import logging
-import init
+import initialize
 import redis
 
 
@@ -10,15 +10,15 @@ def get_db_connection():
     return conn
 
 def get_redis_connection():
-    return redis.Redis('localhost')
+    return redis.Redis('localhost', port=6379)
 
 cache = get_redis_connection()
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 logging.info("Hello!")
-init.init_sqlite_db()
-init.load_db_to_redis()
+initialize.init_sqlite_db()
+initialize.load_db_to_redis()
 logging.info(cache.hgetall("user:12"))
 
 @app.route('/')
