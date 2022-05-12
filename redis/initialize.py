@@ -1,6 +1,5 @@
 import app
 import logging
-import JSON
 
 
 def init_sqlite_db():
@@ -102,7 +101,7 @@ def init_sqlite_db():
         (13,"pede.suspendisse@hotmail.ca"),
         (17,"pede.suspendisse@hotmail.ca"),
         (12,"pede.suspendisse@hotmail.ca"),
-        (12,"dolor.sit@google.net"),
+        (15,"dolor.sit@google.net"),
         (17,"dolor.sit@google.net"),
         (15,"id.mollis.nec@hotmail.net"),
         (14,"id.mollis.nec@hotmail.net"),
@@ -188,13 +187,17 @@ def load_db_to_redis():
             })
         users = None
         
-        meetings = cursor_obj.execute("SELECT * FROM MEETINGS").fetchall()
-        for meetingID, title, description, idPublic in meetings:
-            app.cache.hmset(f'meeting:{meetingID}', {
-                "title": title,
-                "description": description,
-                "idPublic": idPublic,
-            })
+        meetings = cursor_obj.execute("""
+        SELECT i.meetingID, i.orderID, a.userEmail
+        FROM 
+        MEETING_INSTANCES as i, AUDIENCE as a
+        WHERE 
+        i.meetingID = a.meetingID""").fetchall()
+        print(meetings)
+        print("===============")
+        for meetingID, orderID, email in meetings:
+            app.cache.rpush(f'meeting:{meetingID}:{orderID}:audience', email)
+            pass
         meetings = None
 
 
