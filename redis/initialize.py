@@ -173,10 +173,12 @@ def init_sqlite_db():
 
 
 def load_db_to_redis():
-    app.cache.flushdb()
+    # empty all contents previously stored after init
+    # app.cache.flushdb()
+    conn = app.get_db_connection()
+    cursor_obj = conn.cursor()
     try:
-        conn = app.get_db_connection()
-        cursor_obj = conn.cursor()
+        # load users to redis
         users = cursor_obj.execute("SELECT * FROM USERS").fetchall()
         for userID, name, age, gender, email in users:
             app.cache.hmset(f'user:{userID}', {
@@ -188,6 +190,19 @@ def load_db_to_redis():
         users = None
         
         meetings = cursor_obj.execute("""
+        SELECT * FROM MEETING_INSTANCES""").fetchall()
+        for meetingID, orderID, fromDt, toDt, active in meetings:
+            meeting_signature = f"{meetingID}:{orderID}"
+            app.cache.hmset(f'meeting:{meeting_signature}', {
+                "from": fromDt,
+                "to": toDt,
+                "isActive": active,
+            })
+            pass
+        meetings = None
+
+        # list of active
+        meetings = cursor_obj.execute("""
         SELECT i.meetingID, i.orderID, a.userEmail
         FROM 
         MEETING_INSTANCES as i, AUDIENCE as a
@@ -196,8 +211,8 @@ def load_db_to_redis():
         print(meetings)
         print("===============")
         for meetingID, orderID, email in meetings:
-            app.cache.rpush(f'meeting:{meetingID}:{orderID}:audience', email)
-            pass
+            meeting_signature = f"{meetingID}:{orderID}"
+            app.cache.sadd(f'meeting:{meeting_signature}:audience', email)
         meetings = None
 
 
