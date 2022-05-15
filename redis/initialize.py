@@ -1,9 +1,10 @@
-import app
+import datetime
+import utils
 import logging
 
 
 def init_sqlite_db():
-    conn = app.get_db_connection()
+    conn = utils.get_db_connection()
     cursor_obj = conn.cursor()
  
     # USERS table
@@ -123,16 +124,20 @@ def init_sqlite_db():
             ); """
 
     cursor_obj.execute(meeting_instances)
-    meeting_instances_insert = """INSERT INTO MEETING_INSTANCES (meetingID,orderID,fromdatetime, todatetime, isActive)
+    meeting_instances_insert = f"""INSERT INTO MEETING_INSTANCES (meetingID,orderID,fromdatetime, todatetime, isActive)
     VALUES
-    (15,1,"25-07-2022 09:33:13","25-07-2022 10:33:13",0),
-    (15,2,"07-05-2022 04:40:24","07-05-2022 05:40:24",0),
-    (15,3,"05-06-2022 04:15:06","05-06-2022 05:15:06",0),
-    (14,4,"02-06-2022 06:07:34","02-06-2022 07:07:34",0),
-    (14,5,"17-03-2022 10:06:46","17-03-2022 11:06:46",0),
-    (14,6,"31-01-2022 11:33:33","31-01-2022 12:33:33",0),
-    (14,7,"07-07-2022 03:56:31","07-07-2022 04:56:31",0),
-    (14,8,"14-05-2022 05:30:41","14-05-2022 06:30:41",0),
+    (15,1,"25-07-2022 09:33:13","25-07-2023 10:33:13",0),
+    (15,2,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=8)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (15,11,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=8)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (44,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
+    (55,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
+    (66,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
+    (77,3,"15-03-2022 18:31:10","05-06-2023 05:15:06",0),
+    (88,4,"02-06-2022 06:07:34","02-06-2023 07:07:34",0),
+    (14,5,"15-03-2022 18:31:10","17-03-2023 11:06:46",0),
+    (14,6,"31-01-2022 11:33:33","31-01-2023 12:33:33",0),
+    (14,7,"07-07-2022 03:56:31","07-07-2023 04:56:31",0),
+    (14,8,"15-03-2022 18:31:10","14-05-2022 06:30:41",0),
     (14,9,"27-01-2022 03:21:48","27-01-2022 04:21:48",0),
     (14,10,"22-02-2022 10:28:25","22-02-2022 11:28:25",0),
     (16,11,"23-05-2022 01:45:10","23-05-2022 02:45:10",0),
@@ -174,56 +179,23 @@ def init_sqlite_db():
 
 def load_db_to_redis():
     # empty all contents previously stored after init
-    # app.cache.flushdb()
-    conn = app.get_db_connection()
+    cache = utils.get_redis_connection()
+    cache.flushdb()
+    conn = utils.get_db_connection()
     cursor_obj = conn.cursor()
     try:
         # load users to redis
         users = cursor_obj.execute("SELECT * FROM USERS").fetchall()
         for userID, name, age, gender, email in users:
-            app.cache.hmset(f'user:{userID}', {
+            cache.hmset(f'user:{userID}', {
                 "name": name,
                 "age": age,
                 "gender": gender,
                 "email": email
             })
-        users = None
-        
-        meetings = cursor_obj.execute("""
-        SELECT * FROM MEETING_INSTANCES""").fetchall()
-        for meetingID, orderID, fromDt, toDt, active in meetings:
-            meeting_signature = f"{meetingID}:{orderID}"
-            app.cache.hmset(f'meeting:{meeting_signature}', {
-                "from": fromDt,
-                "to": toDt,
-                "isActive": active,
-            })
-            pass
-        meetings = None
-
-        # list of active
-        meetings = cursor_obj.execute("""
-        SELECT i.meetingID, i.orderID, a.userEmail
-        FROM 
-        MEETING_INSTANCES as i, AUDIENCE as a
-        WHERE 
-        i.meetingID = a.meetingID""").fetchall()
-        print(meetings)
-        print("===============")
-        for meetingID, orderID, email in meetings:
-            meeting_signature = f"{meetingID}:{orderID}"
-            app.cache.sadd(f'meeting:{meeting_signature}:audience', email)
-        meetings = None
-
-
-        audience = cursor_obj.execute("SELECT * FROM AUDIENCE").fetchall()
-        for meetingID, email in audience:
-            app.cache.rpush(f'meeting:{meetingID}', email)
-        audience = None
+        users = None    
     except Exception as exc:
         logging.critical(exc)
-    logging.info("OK")
-    logging.info(app.cache.get("user:*"))
-    for key in app.cache.scan_iter("meeting:*"):
-        k = print(str(key).replace("b'","").replace("'",""))
-        # print(app.cache.get(k))
+    finally:
+        cache.close()
+        conn.close()
