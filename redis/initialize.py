@@ -63,7 +63,7 @@ def init_sqlite_db():
         (11,"fringilla","sapien imperdiet ornare.","0"),
         (12,"ipsum","Praesent eu nulla at sem molestie sodales. Mauris","0"),
         (13,"auctor,","vulputate dui", "0"),
-        (14,"libero","semper et, lacinia vitae", "0"),
+        (14,"libero","semper et, lacinia vitae", "1"),
         (15,"arcu.","Vivamus nisi. Mauris nulla. Integer urna.","0"),
         (16,"ligula.","montes, nascetur", "0"),
         (17,"egestas","Curae Phasellus ornare. Fusce mollis. Duis sit","0"),
@@ -127,8 +127,8 @@ def init_sqlite_db():
     meeting_instances_insert = f"""INSERT INTO MEETING_INSTANCES (meetingID,orderID,fromdatetime, todatetime, isActive)
     VALUES
     (15,1,"25-07-2022 09:33:13","25-07-2023 10:33:13",0),
-    (15,2,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=8)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
-    (15,11,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=8)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (15,2,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=12)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (15,11,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=120)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
     (44,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
     (55,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
     (66,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
@@ -188,12 +188,28 @@ def load_db_to_redis():
         users = cursor_obj.execute("SELECT * FROM USERS").fetchall()
         for userID, name, age, gender, email in users:
             cache.hmset(f'user:{userID}', {
+                "id": userID,
                 "name": name,
                 "age": age,
                 "gender": gender,
                 "email": email
             })
         users = None    
+        # load users to redis
+
+        max_id = 0
+        logs = cursor_obj.execute("SELECT * FROM EVENTS_LOG").fetchall()
+        for eventID, userID, eventType, timestamp in logs:
+            if int(eventID) > max_id:
+                max_id = int(eventID)
+            cache.hmset(f'log:{eventID}', {
+                "eventID": eventID,
+                "userID": userID,
+                "eventType": eventType,
+                "timestamp": timestamp
+            })
+        logs = None  
+        cache.set("log_count", str(max_id + 1)) 
     except Exception as exc:
         logging.critical(exc)
     finally:
