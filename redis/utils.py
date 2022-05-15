@@ -6,18 +6,22 @@ import redis
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 
+
 def get_db_connection():
-    conn = sqlite3.connect('database.db', check_same_thread=False, isolation_level=None)
+    conn = sqlite3.connect(
+        'database.db', check_same_thread=False, isolation_level=None)
     return conn
+
 
 def get_redis_connection():
     return redis.Redis('localhost', port=6379, decode_responses=True)
 
+
 cache = get_redis_connection()
 conn = get_db_connection()
 
+
 def activate_meetings():
-    print(datetime.now())
     try:
         cursor_obj = conn.cursor()
         current_time = datetime.now()
@@ -38,12 +42,17 @@ def activate_meetings():
             if cache.sismember('active_meetings', meeting_signature):
                 if current_time > end:
                     logging.info(f"deactivating meeting {meeting_signature}")
+
+                    # REMOVE FROM ACTIVE MEETINGS
                     cache.srem('active_meetings', meeting_signature)
+
+                    # REMOVE MEETING INFO AND AUDIENCE
                     cache.delete(meeting_signature)
                     cache.delete(f'{meeting_signature}:audience')
-                    messages = cache.lrange(f'{meeting_signature}:messages', 0, -1)
-                    for messageID in messages:
-                        cache.delete(f'message:{messageID}')
+
+                    # REMOVE MEETING MESSAGES
+                    for key in cache.scan_iter(f'message:{meetingID}:*'):
+                        cache.delete(key)
                     cache.delete(f'{meeting_signature}:messages')
 
                     # REMOVE JOINED MEMBERS
@@ -53,20 +62,19 @@ def activate_meetings():
                         INSERT INTO EVENTS_LOG (userID, eventType, timestamp)
                         VALUES ({userID}, "leave", '{str(end)}')
                         """)
-                    print(f"{meeting_signature}:joined")
                     cache.delete(f'{meeting_signature}:joined')
 
-
                     # DELETE LOGS
-                    logs = cache.lrange(f'{meeting_signature}:logs', 0, -1)
+                    logs = cache.smembers(f'{meeting_signature}:logs')
                     for eventID in logs:
-                        userID, eventType, timestamp = cache.hmget(f'log:{eventID}', ["userID", "eventType", "timestamp"])
+                        userID, eventType, timestamp = cache.hmget(
+                            f'log:{eventID}', ["userID", "eventType", "timestamp"])
 
-                        conn.execute(f"""
+                        cursor_obj.execute(f"""
                         INSERT INTO EVENTS_LOG (userID, eventType, timestamp)
                         VALUES ({userID}, "{eventType}", "{timestamp}")
                         """)
-
+                        conn.commit()
                         cache.delete(f'log:{eventID}')
                     cache.delete(f'{meeting_signature}:logs')
             else:
@@ -74,13 +82,13 @@ def activate_meetings():
                     logging.info(f"activating meeting {meeting_signature}")
                     cache.sadd('active_meetings', meeting_signature)
                     cache.hmset(meeting_signature, {
-                    "meetingID": meetingID,
-                    "orderID": orderID,
-                    "title": title,
-                    "description": description,
-                    "isPublic": isPublic,
-                    "fromdatetime": str(start),
-                    "todatetime": str(end)
+                        "meetingID": meetingID,
+                        "orderID": orderID,
+                        "title": title,
+                        "description": description,
+                        "isPublic": isPublic,
+                        "fromdatetime": str(start),
+                        "todatetime": str(end)
                     })
 
                     if not isPublic:
@@ -91,10 +99,11 @@ def activate_meetings():
                         AND m.meetingID = a.meetingID
                         """).fetchall()
                         for email in audience:
-                            cache.sadd(f'{meeting_signature}:audience', email[0])
-                    cache.set(f"{meeting_signature}:message_counter", 0)
+                            cache.sadd(
+                                f'{meeting_signature}:audience', email[0])
     except Exception as e:
         traceback.print_exc()
+
 
 def resolve_user_email(userID):
     result = cache.hmget(f"user:{userID}", "email")
@@ -102,10 +111,12 @@ def resolve_user_email(userID):
         raise Exception("user does not exist")
     return result[0]
 
+
 def format_results(text):
-    text = str(text).replace("'",'"')
+    text = str(text).replace("'", '"')
     parsed = json.loads(text)
     return (json.dumps(parsed, indent=4)).replace('\n', '<br>').replace(" ", "&nbsp")
+
 
 def format_results_dict(dictionary):
     return json.dumps(dictionary, indent=4).replace('\n', '<br>').replace(" ", "&nbsp")

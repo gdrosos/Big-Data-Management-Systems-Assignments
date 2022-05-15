@@ -6,7 +6,7 @@ import logging
 def init_sqlite_db():
     conn = utils.get_db_connection()
     cursor_obj = conn.cursor()
- 
+
     # USERS table
     cursor_obj.execute("DROP TABLE IF EXISTS USERS")
     user_table = """ 
@@ -22,15 +22,6 @@ def init_sqlite_db():
     user_insert = """
     INSERT INTO USERS (userID, name, age, gender, email)
     VALUES
-        ("1","Scott Compton",84,"M","pede.suspendisse@hotmail.ca"),
-        ("2","Kasper Dixon",18,"M","mollis.lectus@hotmail.edu"),
-        ("3","Iliana Hancock",75,"M","mi.pede@aol.couk"),
-        ("4","Sade Guzman",40,"M","mi.ac.mattis@outlook.net"),
-        ("5","Avram Anderson",44,"F","amet.consectetuer.adipiscing@google.org"),
-        (6,"Carol Medina",83,"M","magna.malesuada.vel@hotmail.couk"),
-        (7,"Yuli Dillon",54,"F","tempor.est.ac@yahoo.edu"),
-        (8,"Alyssa Quinn",38,"M","tempus.risus@aol.ca"),
-        (9,"Lars Hatfield",81,"F","elit.fermentum.risus@google.com"),
         (10,"Zorita Mason",18,"M","ultrices.vivamus@hotmail.com"),
         (11,"Kennedy Cross",73,"F","ante.dictum@aol.edu"),
         (12,"Ella Barr",52,"F","ut@outlook.edu"),
@@ -82,7 +73,6 @@ def init_sqlite_db():
     """
     cursor_obj.execute(meeting_insert)
 
-
     # AUDIENCE table
     cursor_obj.execute("DROP TABLE IF EXISTS AUDIENCE")
     audience = """ 
@@ -109,7 +99,6 @@ def init_sqlite_db():
         (16,"id.mollis.nec@hotmail.net");'''
     cursor_obj.execute(audience_insert)
 
-
     # MEETING_INSTANCES table
     cursor_obj.execute("DROP TABLE IF EXISTS MEETING_INSTANCES")
     meeting_instances = """ 
@@ -130,12 +119,13 @@ def init_sqlite_db():
     (15,2,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=12)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
     (15,11,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=120)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
     (44,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
-    (55,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
-    (66,2,"15-03-2022 18:31:10","07-05-2023 05:40:24",0),
-    (77,3,"15-03-2022 18:31:10","05-06-2023 05:15:06",0),
-    (88,4,"02-06-2022 06:07:34","02-06-2023 07:07:34",0),
+    (16,2,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=12)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (17,11,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=120)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (18,2,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=12)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    (19,11,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=120)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
+    
     (14,5,"15-03-2022 18:31:10","17-03-2023 11:06:46",0),
-    (14,6,"31-01-2022 11:33:33","31-01-2023 12:33:33",0),
+    (14,6,"{datetime.datetime.now().strftime(r'%d-%m-%Y %H:%M:%S.%f')}","{(datetime.datetime.now() + datetime.timedelta(seconds=120)).strftime(r'%d-%m-%Y %H:%M:%S.%f')}",0),
     (14,7,"07-07-2022 03:56:31","07-07-2023 04:56:31",0),
     (14,8,"15-03-2022 18:31:10","14-05-2022 06:30:41",0),
     (14,9,"27-01-2022 03:21:48","27-01-2022 04:21:48",0),
@@ -194,7 +184,7 @@ def load_db_to_redis():
                 "gender": gender,
                 "email": email
             })
-        users = None    
+        users = None
         # load users to redis
 
         max_id = 0
@@ -208,8 +198,8 @@ def load_db_to_redis():
                 "eventType": eventType,
                 "timestamp": timestamp
             })
-        logs = None  
-        cache.set("log_count", str(max_id + 1)) 
+        logs = None
+        cache.set("log_count", str(max_id + 1))
     except Exception as exc:
         logging.critical(exc)
     finally:
