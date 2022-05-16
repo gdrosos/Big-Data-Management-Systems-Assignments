@@ -192,12 +192,6 @@ def load_db_to_redis():
         for eventID, userID, eventType, timestamp in logs:
             if int(eventID) > max_id:
                 max_id = int(eventID)
-            cache.hmset(f'log:{eventID}', {
-                "eventID": eventID,
-                "userID": userID,
-                "eventType": eventType,
-                "timestamp": timestamp
-            })
         logs = None
         cache.set("log_count", str(max_id + 1))
     except Exception as exc:

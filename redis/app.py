@@ -139,7 +139,6 @@ def show_active_meetings():
         return render_template('index.html', posts=[f"Error:{str(e)}"])
 
 # Function: show active meetings
-
 @app.route('/post_message/<meeting_signature>/<user_id>/<text>', methods={"GET"})
 def post_message(meeting_signature, user_id, text):
     try:
@@ -162,8 +161,6 @@ def post_message(meeting_signature, user_id, text):
         return render_template('index.html', posts=[f"Error:{str(e)}"])
 
 # Function:
-
-
 @app.route('/show_chat/<meeting_signature>', methods={"GET"})
 def show_chat(meeting_signature):
     try:
