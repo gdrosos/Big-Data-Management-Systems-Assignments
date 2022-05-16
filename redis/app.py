@@ -112,18 +112,12 @@ def show_meeting_join_timestamps():
 # Function: show meeting’s current participants
 @app.route('/show_participants/<meeting_signature>', methods=["GET"])
 def show_meeting_participants(meeting_signature):
+    participants = []
     try:
         stmt = cache.smembers(f"meeting:{meeting_signature}:joined")
-        print(stmt)
-        if len(stmt) > 0:
-            result = "["
-            for user in stmt:
-                result += str(cache.hgetall(f"user:{user}")) + ","
-            result = result[:-1] + "]"
-            print(result)
-            return utils.format_results(result)
-        else:
-            raise Exception(f"meeting is either inactive or does not exist!")
+        for user in stmt:
+            participants.append(cache.hgetall(f"user:{user}"))
+        return utils.format_results_dict(participants)
     except Exception as e:
         return render_template('index.html', posts=[f"Error:{str(e)}"])
 
@@ -163,7 +157,6 @@ def post_message(meeting_signature, user_id, text):
         else:
             raise Exception(
                 f"meeting with signature {meeting_signature} not active!")
-        return render_template('index.html', posts=[f"Success!"])
     except Exception as e:
         logging.error(f"Error: {str(e)}")
         return render_template('index.html', posts=[f"Error:{str(e)}"])
