@@ -2,7 +2,6 @@ from datetime import datetime
 from flask import Flask, render_template
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import request
 import utils
 import initialize
 
@@ -115,12 +114,13 @@ def show_meeting_join_timestamps():
 def show_meeting_participants(meeting_signature):
     try:
         stmt = cache.smembers(f"meeting:{meeting_signature}:joined")
+        print(stmt)
         if len(stmt) > 0:
             result = "["
             for user in stmt:
                 result += str(cache.hgetall(f"user:{user}")) + ","
             result = result[:-1] + "]"
-
+            print(result)
             return utils.format_results(result)
         else:
             raise Exception(f"meeting is either inactive or does not exist!")
@@ -129,7 +129,7 @@ def show_meeting_participants(meeting_signature):
 
 
 # Function: show active meetings
-@app.route('/show_active_meetings/', methods=["GET"])
+@app.route('/active_meetings/', methods=["GET"])
 def show_active_meetings():
     try:
         stmt = cache.smembers("active_meetings")
@@ -145,7 +145,6 @@ def show_active_meetings():
         return render_template('index.html', posts=[f"Error:{str(e)}"])
 
 # Function: show active meetings
-
 
 @app.route('/post_message/<meeting_signature>/<user_id>/<text>', methods={"GET"})
 def post_message(meeting_signature, user_id, text):
